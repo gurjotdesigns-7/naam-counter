@@ -1,30 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import shivaImage from 'figma:asset/c57638df14221ac249a2c7094af58482147cba8f.png';
 
 export default function App() {
   const [count, setCount] = useState(0);
   const [isGlowing, setIsGlowing] = useState(false);
+  const [totalMalas, setTotalMalas] = useState(0);
+  const [totalNaam, setTotalNaam] = useState(0);
+  const [isCompleting, setIsCompleting] = useState(false);
   const maxCount = 108;
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    const savedCount = localStorage.getItem('naamCount');
+    const savedMalas = localStorage.getItem('totalMalas');
+    const savedNaam = localStorage.getItem('totalNaam');
+    
+    if (savedCount) setCount(parseInt(savedCount));
+    if (savedMalas) setTotalMalas(parseInt(savedMalas));
+    if (savedNaam) setTotalNaam(parseInt(savedNaam));
+  }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('naamCount', count.toString());
+    localStorage.setItem('totalMalas', totalMalas.toString());
+    localStorage.setItem('totalNaam', totalNaam.toString());
+  }, [count, totalMalas, totalNaam]);
+
+  // Handle completion and auto-reset
+  useEffect(() => {
+    if (count === maxCount) {
+      setIsCompleting(true);
+      
+      // After 2 seconds, increment mala count and reset
+      const timer = setTimeout(() => {
+        setTotalMalas(totalMalas + 1);
+        setCount(0);
+        setIsCompleting(false);
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [count, maxCount, totalMalas]);
 
   const handleTap = () => {
     if (count < maxCount) {
       setCount(count + 1);
+      setTotalNaam(totalNaam + 1);
       setIsGlowing(true);
       setTimeout(() => setIsGlowing(false), 300);
     }
   };
 
-  const handleReset = () => {
-    setCount(0);
-  };
-
   const progress = (count / maxCount) * 360;
+  const isComplete = count >= maxCount;
 
   return (
     <div className="size-full flex flex-col items-center justify-center bg-gradient-to-br from-[#2d1b4e] via-[#1f1335] to-[#0f0a1e] relative overflow-hidden">
       {/* Shiva Watermark Background */}
       <div 
-        className="absolute inset-0 bg-center bg-cover opacity-25 pointer-events-none"
+        className="absolute inset-0 bg-center bg-cover opacity-[0.126] pointer-events-none"
         style={{ 
           backgroundImage: `url(${shivaImage})`,
           backgroundSize: 'cover',
@@ -177,8 +212,28 @@ export default function App() {
         </div>
       </div>
 
+      {/* Completion Message */}
+      {isComplete && (
+        <div className="absolute top-[28%] z-20">
+          <p className="text-orange-200/90 text-sm tracking-wider animate-pulse" style={{ fontFamily: 'Georgia, serif' }}>
+            ✨ 108 Complete ✨
+          </p>
+        </div>
+      )}
+
       {/* Tap Button with Progress Ring */}
       <div className="relative mb-6 z-10 flex items-center justify-center">
+        {/* Subtle Background Pulse on Completion */}
+        {isCompleting && (
+          <div 
+            className="absolute w-56 h-56 rounded-full bg-orange-400/10 animate-ping pointer-events-none"
+            style={{
+              animationDuration: '300ms',
+              animationIterationCount: '1'
+            }}
+          />
+        )}
+
         {/* Progress Ring */}
         <svg className="absolute w-[160px] h-[160px]" style={{ transform: 'rotate(-90deg)' }}>
           <circle
@@ -199,7 +254,11 @@ export default function App() {
             strokeDasharray={`${2 * Math.PI * 70}`}
             strokeDashoffset={`${2 * Math.PI * 70 * (1 - progress / 360)}`}
             strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+            className={isComplete ? 'animate-pulse' : ''}
+            style={{ 
+              transition: 'stroke-dashoffset 0.3s ease',
+              filter: isComplete ? 'drop-shadow(0 0 8px rgba(255,107,107,0.6)) drop-shadow(0 0 12px rgba(255,140,107,0.4))' : 'none'
+            }}
           />
           <defs>
             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -218,23 +277,44 @@ export default function App() {
                      shadow-[0_8px_32px_rgba(255,107,107,0.4),0_16px_48px_rgba(255,107,107,0.2),inset_0_-4px_8px_rgba(0,0,0,0.2)]
                      hover:shadow-[0_12px_40px_rgba(255,107,107,0.5),0_20px_56px_rgba(255,107,107,0.3),inset_0_-4px_8px_rgba(0,0,0,0.2)]
                      active:scale-95 transition-all duration-200
-                     disabled:opacity-50 disabled:cursor-not-allowed
+                     disabled:opacity-70 disabled:cursor-not-allowed
                      border-t-2 border-[#ffb3a7]"
           style={{
-            filter: count >= maxCount ? 'grayscale(0.3)' : 'none'
+            boxShadow: isComplete 
+              ? '0 12px 40px rgba(255,107,107,0.7), 0 20px 56px rgba(255,107,107,0.5), inset 0 -4px 8px rgba(0,0,0,0.2)' 
+              : undefined
           }}
         >
           Tap
         </button>
       </div>
 
-      {/* Reset Button */}
-      <button
-        onClick={handleReset}
-        className="text-white/60 hover:text-white/90 text-sm transition-colors duration-200 z-10"
-      >
-        Reset
-      </button>
+      {/* Lifetime Stats Section */}
+      <div className="mt-12 z-10 flex flex-col items-center">
+        <div className="w-px h-8 bg-gradient-to-b from-transparent via-orange-300/30 to-transparent mb-4" />
+        
+        <div className="flex gap-12 text-center">
+          <div className="flex flex-col items-center">
+            <p className="text-orange-200/50 text-xs tracking-wide mb-1 uppercase" style={{ fontFamily: 'system-ui, sans-serif', letterSpacing: '0.1em' }}>
+              Total Malas Completed
+            </p>
+            <p className="text-orange-300/90 text-2xl font-semibold" style={{ fontFamily: 'Georgia, serif' }}>
+              {totalMalas}
+            </p>
+          </div>
+          
+          <div className="w-px h-12 bg-gradient-to-b from-transparent via-orange-300/20 to-transparent" />
+          
+          <div className="flex flex-col items-center">
+            <p className="text-orange-200/50 text-xs tracking-wide mb-1 uppercase" style={{ fontFamily: 'system-ui, sans-serif', letterSpacing: '0.1em' }}>
+              Total Naam Taken
+            </p>
+            <p className="text-orange-300/90 text-2xl font-semibold" style={{ fontFamily: 'Georgia, serif' }}>
+              {totalNaam.toLocaleString()}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Ambient Glow Effects */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
