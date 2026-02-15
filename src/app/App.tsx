@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import shivaImage from 'figma:asset/c57638df14221ac249a2c7094af58482147cba8f.png';
+import shivaImage from '../assets/godsfavoritearts-shiva-8797743_1920.jpg';
 
 export default function App() {
   const [count, setCount] = useState(0);
@@ -43,30 +43,41 @@ export default function App() {
     }
   }, [count, maxCount, totalMalas]);
 
-  const handleTap = () => {
-    if (count < maxCount) {
-      setCount(count + 1);
-      setTotalNaam(totalNaam + 1);
-      setIsGlowing(true);
-      setTimeout(() => setIsGlowing(false), 300);
-    }
-  };
+const handleReset = () => {
+  setCount(0);
+  setTotalNaam(0);
+  setTotalMalas(0);
+  setIsGlowing(false);
 
+  localStorage.removeItem('naamCount');
+  localStorage.removeItem('totalMalas');
+  localStorage.removeItem('totalNaam');
+};
+const handleTap = () => {
+  if (count < maxCount) {
+    setCount(prev => prev + 1);
+    setTotalNaam(prev => prev + 1);
+    setIsGlowing(true);
+
+    setTimeout(() => {
+      setIsGlowing(false);
+    }, 300);
+  }
+};
   const progress = (count / maxCount) * 360;
   const isComplete = count >= maxCount;
 
   return (
-    <div className="size-full flex flex-col items-center justify-center bg-gradient-to-br from-[#2d1b4e] via-[#1f1335] to-[#0f0a1e] relative overflow-hidden">
+ <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden">
       {/* Shiva Watermark Background */}
-      <div 
-        className="absolute inset-0 bg-center bg-cover opacity-[0.126] pointer-events-none"
-        style={{ 
-          backgroundImage: `url(${shivaImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      />
+<div
+  className="absolute inset-0 bg-center bg-cover pointer-events-none"
+  style={{
+backgroundImage: `linear-gradient(rgba(15,5,25,0.9), rgba(25,10,40,0.8)), url(${shivaImage})`,    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  }}
+/>
       
       {/* Decorative Rudraksh Mala Illustration - Left */}
       <div 
@@ -197,29 +208,31 @@ export default function App() {
         <p className="text-orange-200/80 text-lg tracking-widest">
           108 Mala Meditation
         </p>
+        {isComplete && (
+  <p className="mt-1 text-orange-300 text-sm tracking-wider animate-fade-in">
+    ✨ 108 Complete ✨
+  </p>
+)}
       </div>
 
       {/* Counter Display */}
       <div className="mb-8 z-10">
-        <div 
-          className="text-7xl font-bold text-white"
-          style={{ 
-            textShadow: '0 0 20px rgba(255,150,150,0.6), 0 0 40px rgba(255,100,100,0.4)',
-            fontFamily: 'system-ui, sans-serif'
-          }}
-        >
-          {count}
-        </div>
-      </div>
+  <div 
+    className={`text-7xl font-bold transition-all duration-300 ${
+      isComplete ? 'text-yellow-300 scale-110' : 'text-white'
+    }`}
+    style={{ 
+      textShadow: isComplete
+        ? '0 0 25px rgba(255,215,100,0.9), 0 0 60px rgba(255,165,0,0.6)'
+        : '0 0 20px rgba(255,150,150,0.6), 0 0 40px rgba(255,100,100,0.4)',
+      fontFamily: 'system-ui, sans-serif'
+    }}
+  >
+    {isComplete ? `✨ ${count} ✨` : count}
+  </div>
+</div>
 
-      {/* Completion Message */}
-      {isComplete && (
-        <div className="absolute top-[28%] z-20">
-          <p className="text-orange-200/90 text-sm tracking-wider animate-pulse" style={{ fontFamily: 'Georgia, serif' }}>
-            ✨ 108 Complete ✨
-          </p>
-        </div>
-      )}
+    
 
       {/* Tap Button with Progress Ring */}
       <div className="relative mb-6 z-10 flex items-center justify-center">
@@ -288,7 +301,21 @@ export default function App() {
           Tap
         </button>
       </div>
-
+{/* Reset Button */}
+<div className="mt-8 z-10">
+  <button
+    onClick={handleReset}
+    className="px-6 py-2 rounded-full
+               bg-orange-400/20 text-orange-200
+               border border-orange-300/30
+               backdrop-blur-sm
+               hover:bg-orange-400/30
+               active:scale-95
+               transition-all duration-200"
+  >
+    Reset
+  </button>
+</div>
       {/* Lifetime Stats Section */}
       <div className="mt-12 z-10 flex flex-col items-center">
         <div className="w-px h-8 bg-gradient-to-b from-transparent via-orange-300/30 to-transparent mb-4" />
@@ -315,7 +342,18 @@ export default function App() {
           </div>
         </div>
       </div>
-
+{/* Signature */}
+<div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+  <p
+    className="text-orange-200/60 text-sm"
+    style={{
+  fontFamily: '"Kite One", sans-serif',
+  letterSpacing: '0.05em'
+}}
+  >
+    With love from Gurjot
+  </p>
+</div>
       {/* Ambient Glow Effects */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl pointer-events-none" />
     </div>
